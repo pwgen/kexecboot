@@ -183,6 +183,8 @@ void start_kernel(struct params_t *params, int choice)
 	const char str_rootwait[] = " rootwait";
 	const char str_ubirootdev[] = "ubi0";
 	const char str_ubimtd[] = " ubi.mtd="; /* max ' ubi.mtd=15' len 11 +1 = 12 */
+	const char str_hardboot[] = "--load-hardboot";
+	const char str_memmin[] = "--mem-min=0x8E000000"; //ToDo make this as config option
 
 #ifdef UBI_VID_HDR_OFFSET
 	const char str_ubimtd_off[] = UBI_VID_HDR_OFFSET;
@@ -203,7 +205,7 @@ void start_kernel(struct params_t *params, int choice)
 	/* empty environment */
 	char *const envp[] = { NULL };
 
-	const char *load_argv[] = { NULL, "-l", NULL, NULL, NULL, NULL };
+	const char *load_argv[] = { NULL, "-l", NULL, NULL, NULL, NULL, NULL , NULL };
 	const char *exec_argv[] = { NULL, "-e", NULL, NULL};
 
 	char *cmdline_arg = NULL, *initrd_arg = NULL;
@@ -218,7 +220,9 @@ void start_kernel(struct params_t *params, int choice)
 
 	/* --command-line arg generation */
 	idx = 2;	/* load_argv current option index */
-
+	load_argv[idx]=str_hardboot;
+	load_argv[++idx]=str_memmin;
+	idx++;
 	/* fill '--command-line' option */
 	if (item->device) {
 		/* default device to mount */
@@ -296,7 +300,7 @@ void start_kernel(struct params_t *params, int choice)
 			}
 
 			if (item->cmdline) {
-				strcat(cmdline_arg, " ");
+				strcat(cmdline_arg, "");
 				strcat(cmdline_arg, item->cmdline);
 			}
 			load_argv[idx] = cmdline_arg;
@@ -322,10 +326,14 @@ void start_kernel(struct params_t *params, int choice)
 
 	/* Append kernelpath as last arg of kexec */
 	load_argv[idx] = item->kernelpath;
+// set harboot options
 
-	DPRINTF("load_argv: %s, %s, %s, %s, %s", load_argv[0],
+
+	if (NULL == load_argv[idx]) perror("Can't allocate memory for mem min option");
+	DPRINTF("load_argv: %s, %s, %s, %s, %s, %s, %s", load_argv[0],
 			load_argv[1], load_argv[2],
-			load_argv[3], load_argv[4]);
+			load_argv[3], load_argv[4],
+			load_argv[5],load_argv[6]);
 
 	/* Mount boot device */
 	if ( -1 == mount(mount_dev, mount_point, mount_fstype,
